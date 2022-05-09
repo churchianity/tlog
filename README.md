@@ -45,3 +45,6 @@ Add a 'url' field to the object to specify the url for the request, which should
 
 You may commonly have to set the 'headers' object, and the 'content-type' header inside of that object, depending on your server. If it's not provided it's set to 'text/plain'.
 
+## timestamps
+all logs are prefixed with an ISO 8601 timestamp. You can change this easily by editing the `timestamp` function, but for now it is not configurable from the config file.
+
