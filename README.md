@@ -1,4 +1,7 @@
 
+# Background
+log4jesus is an attempt to write a 'logging library' that has all of the practical benefits of a much larger logging library, but with no dependencies, and in much fewer lines of code, without sacrificing features, by taking a straight-forward approach of solving the problem at hand, and no other problems. There is nothing in this 'library' that could be called a 'system' or 'framework'. Just a few functions that actually do the work required. 
+
 # Usage
 
 ```js
