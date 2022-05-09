@@ -17,7 +17,7 @@ function parseStreams(config) {
     if (config.file) {
         for (let i = 0; i < config.file.length; i++) {
             const file = config.file[i];
-            let path = file.path || `${__dirname}/${timestamp()}-log.txt`;
+            let path = file.path || `${__dirname}/${timestamp()}.log`;
 
             try {
                 file.stream = fs.createWriteStream(path, { flags: "a", autoClose: true });
@@ -152,10 +152,6 @@ function getStreamsOfTypeAndTags(tags, type) {
 }
 
 function getStreamsByTags(tags) {
-    if (!Array.isArray(tags)) {
-        tags = [ tags ];
-    }
-
     return [].concat(
         getStreamsOfTypeAndTags(tags, "file"),
         getStreamsOfTypeAndTags(tags, "console"),
@@ -164,7 +160,7 @@ function getStreamsByTags(tags) {
 }
 
 // convienent list of streams that we always want to send our logs to, regardless of tags
-const alwaysStreams = getStreamsByTags("all");
+const alwaysStreams = getStreamsByTags(["all"]);
 
 function httpRequest(options, payload) {
     const url = new URL(options.url);
@@ -212,9 +208,11 @@ function logt(tags, ...args) {
         tags = [ tags ];
     }
 
+    const output = formatOutput(...args);
     const streams = getStreamsByTags(tags);
     for (let i = 0; i < streams.length; i++) {
         const s = streams[i];
+
 
         if (s.stream) {
             s.stream.write(output);

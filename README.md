@@ -2,7 +2,7 @@
 # Usage
 
 ```js
-    const { log, logt } = require("log4jesus");
+    const { log, logt } = require("./log4jesus");
 ```
 
 ## log
@@ -47,4 +47,7 @@ You may commonly have to set the 'headers' object, and the 'content-type' header
 
 ## timestamps
 all logs are prefixed with an ISO 8601 timestamp. You can change this easily by editing the `timestamp` function, but for now it is not configurable from the config file.
+
+## output formatting
+by default, we format output using `util.format`, the same way console output is normally formatted. You can change this if you want by editing the `formatOutput` function, but for now it is not configurable from the config file.
 
