@@ -19,7 +19,7 @@ first argument can be a string or array of strings.
     logt("verbose", "Download progress:", downloadProgress / totalDownloads);
 
     // send to targets with the 'info' and 'error' tags
-    log(["error", "info"], "failed to parse json at: ", filePath)
+    logt(["error", "info"], "failed to parse json at: ", filePath)
 ```
 
 # Configuration
