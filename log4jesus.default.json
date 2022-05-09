@@ -1,0 +1,39 @@
+{
+    "file": [
+        {
+            "tags": "all"
+        }
+    ],
+    "console": [
+        {
+            "tags": "error",
+            "stdstream": "stderr"
+        },
+        {
+            "tags": "warn",
+            "stdstream": "stdout"
+        },
+        {
+            "tags": "info",
+            "stdstream": "stdout"
+        },
+        {
+            "tags": "verbose",
+            "stdstream": "stdout"
+        },
+        {
+            "tags": [ "all", "log" ],
+            "stdstream": "stdout"
+        }
+    ],
+    "http": [
+        {
+            "tags": "none",
+            "url": "https://localhost:8181",
+            "method": "POST",
+            "headers": {
+                "content-type": "application/json"
+            }
+        }
+    ]
+}
