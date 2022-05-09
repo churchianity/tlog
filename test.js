@@ -4,7 +4,6 @@ const { log, logt } = require("./log4jesus");
 
 log("use", ["exactly", "like"], `console.log ${420 * 69}`)
 
-
 const downloadProgress = 51;
 const totalDownloads = 106;
 // send only to targets with the 'verbose' tag

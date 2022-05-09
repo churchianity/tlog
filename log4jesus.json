@@ -29,10 +29,10 @@
     "http": [
         {
             "tags": "none",
-            "url": "https://localhost:8181",
+            "url": "http://localhost:8080",
             "method": "POST",
             "headers": {
-                "content-type": "application/json"
+                "content-type": "text/plain"
             }
         }
     ]
