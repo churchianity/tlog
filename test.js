@@ -1,8 +1,7 @@
 
-const { log, logt } = require("./log4jesus");
+const { log, logt } = require("./tlog");
 
-
-log("use", ["exactly", "like"], `console.log ${420 * 69}`)
+log("use", ["exactly", "like"], `console.log ${17 * 15}`)
 
 const downloadProgress = 51;
 const totalDownloads = 106;

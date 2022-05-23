@@ -3,6 +3,7 @@ const fs = require("fs");
 const util = require("util");
 const http = require("http");
 const https = require("https");
+const crypto = require("crypto");
 
 
 function timestamp() {
@@ -17,7 +18,9 @@ function parseStreams(config) {
     if (config.file) {
         for (let i = 0; i < config.file.length; i++) {
             const file = config.file[i];
-            let path = file.path || `${__dirname}/${timestamp()}.log`;
+            file.id = crypto.randomBytes(8).toString("hex");
+
+            let path = file.path || `${__dirname}/data/${timestamp()}.log`;
 
             try {
                 file.stream = fs.createWriteStream(path, { flags: "a", autoClose: true });
@@ -42,6 +45,7 @@ function parseStreams(config) {
                 process.exit(1);
             }
 
+            tty.id = tty.stdstream;
             tty.stream = process[tty.stdstream];
         }
     }
@@ -50,11 +54,13 @@ function parseStreams(config) {
         for (let i = 0; i < config.http.length; i++) {
             const h = config.http[i];
 
+            h.id = crypto.randomBytes(8).toString("hex");
+
             if (!h.method) {
                 h.method = "POST";
 
             } else if (h.method === "GET") {
-                console.warn(`using the http method 'GET' to send your logs is not recommended - in particular if you are intending to send a request body. Some system libraries are known to strip the payload completely off of GET requests, making this unreliable, despite the http 1.1 standard technically allowing it. See: https://github.com/whatwg/fetch/issues/551#issue-235203784`);
+                console.warn(`using the http method 'GET' to send your logs is not recommended. Unfortunately, sending payloads with a GET request can be unreliable.\nSee:\nhttps://github.com/whatwg/fetch/issues/551#issue-235203784\nRemove this line in tlog.js to suppress this warning.`);
             }
 
             if (!h.url) {
@@ -67,68 +73,20 @@ function parseStreams(config) {
                     "content-type": "text/plain"
                 };
             }
+
+            if (!h.errorTags) {
+                h.errorTags = [];
+
+            } else if (!Array.isArray(h.errorTags)) {
+                h.errorTags = [ h.errorTags ];
+            }
         }
     }
-}
-
-function loadAndParseConfig(configFilePath) {
-    let config;
-    try {
-        const fileContents = fs.readFileSync(configFilePath, { encoding: "utf-8", flag: "r" });
-        try {
-            config = JSON.parse(fileContents);
-
-        } catch (e) {
-            console.error(`invalid JSON in your configuration file: ${configFilePath}`);
-            process.exit(1);
-        }
-    } catch(e) {
-        // no config file, warn about it, make a default
-        console.warn(`no configuration file found at: ${configFilePath}. Using a default config.`);
-        config = {
-            "file": [
-                {
-                    "tags": "all"
-                },
-            ],
-            "console": [
-                {
-                    "tags": "error",
-                    "stdstream": "stderr"
-                },
-                {
-                    "tags": "warn",
-                    "stdstream": "stdout"
-                },
-                {
-                    "tags": "info",
-                    "stdstream": "stdout"
-                },
-                {
-                    "tags": "verbose",
-                    "stdstream": "stdout"
-                },
-                {
-                    "tags": [ "all", "log" ],
-                    "stdstream": "stdout"
-                }
-            ],
-            "http": [
-                {
-                    "tags": "none",
-                    "url": "http://localhost:8080"
-                }
-            ]
-        };
-    }
-
-    parseStreams(config);
 
     return config;
 }
 
-const configFilePath = __dirname + "/log4jesus.json";
-const config = loadAndParseConfig(configFilePath);
+const config = parseStreams(require("./tlog.conf.js"));
 
 function getStreamsOfTypeAndTags(tags, type) {
     const streams = config[type];
@@ -162,9 +120,10 @@ function getStreamsByTags(tags) {
 // convienent list of streams that we always want to send our logs to, regardless of tags
 const alwaysStreams = getStreamsByTags(["all"]);
 
-function httpRequest(options, payload) {
+function httpRequest(options, ...args) {
     const url = new URL(options.url);
     const client = url.protocol === "https" ? https : http;
+    const payload = formatOutput(...args);
     options.headers["content-length"] = payload.length;
     const request = client.request(url, options, response => {
         response.on("data", data => {
@@ -173,26 +132,41 @@ function httpRequest(options, payload) {
     });
 
     request.on("error", error => {
-        // @TODO, if you care about errors on the request
+        const streams = getStreamsByTags(options.errorTags);
+
+        const usedStreams = {};
+        for (let i = 0; i < streams.length; i++) {
+            const stream = streams[i];
+
+            if (usedStreams[stream.id]) {
+                continue;
+            }
+
+            usedStreams[stream.id] = true;
+
+            if (stream.id !== options.id) {
+                write(stream, "error writing to http: ", ...args);
+            }
+        }
     });
 
-    request.write(payload);
+    request.write(formatOutput(...args));
     request.end();
+}
+
+function write(s, ...args) {
+    if (s.stream) {
+        s.stream.write(formatOutput(...args));
+
+    } else if (s.type === "http") {
+        httpRequest(s, ...args);
+    }
 }
 
 // log by itself will only log to streams tagged 'all'. if you want to specifiy tags, call 'logt' instead
 function log(...args) {
-    const output = formatOutput(...args);
-
     for (let i = 0; i < alwaysStreams.length; i++) {
-        const s = alwaysStreams[i];
-
-        if (s.stream) {
-            s.stream.write(output);
-
-        } else if (s.type === "http") {
-            httpRequest(s, output);
-        }
+        write(alwaysStreams[i], ...args);
     }
 }
 
@@ -200,7 +174,6 @@ function log(...args) {
 // which informs the logger 'where' to output the log
 function logt(tags, ...args) {
     if (!args) {
-        log(tags);
         return;
     }
 
@@ -208,18 +181,29 @@ function logt(tags, ...args) {
         tags = [ tags ];
     }
 
-    const output = formatOutput(...args);
+    const usedStreams = {};
     const streams = getStreamsByTags(tags);
     for (let i = 0; i < streams.length; i++) {
         const s = streams[i];
 
-
-        if (s.stream) {
-            s.stream.write(output);
-
-        } else if (s.type === "http") {
-            httpRequest(s, output);
+        if (usedStreams[s.id]) {
+            continue;
         }
+
+        write(s, ...args);
+        usedStreams[s.id] = true;
+    }
+
+    // now send it to the 'all' streams. we need to check if we've already done the job, because in the case a stream is tagged with both 'all' and another tag, we'd double send if we didn't de-dupe.
+    for (let i = 0; i < alwaysStreams.length; i++) {
+        const s = alwaysStreams[i];
+
+        if (usedStreams[s.id]) {
+            continue;
+        }
+
+        write(s, ...args);
+        usedStreams[s.id] = true;
     }
 }
 

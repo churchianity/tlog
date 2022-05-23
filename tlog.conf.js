@@ -1,7 +1,8 @@
-{
+
+module.exports = {
     "file": [
         {
-            "tags": "all"
+            "tags": "httpErrors"
         }
     ],
     "console": [
@@ -29,11 +30,13 @@
     "http": [
         {
             "tags": "none",
-            "url": "http://localhost:8080",
+            "url": process.env.MY_SERVER_URL,
+            "errorTags": "httpErrors",
             "method": "POST",
             "headers": {
                 "content-type": "text/plain"
             }
         }
     ]
-}
+};
+
