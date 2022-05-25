@@ -20,7 +20,7 @@ function parseStreams(config) {
             const file = config.file[i];
             file.id = crypto.randomBytes(8).toString("hex");
 
-            let path = file.path || `${__dirname}/data/${timestamp()}.log`;
+            let path = file.path || `${__dirname}/${timestamp()}.log`;
 
             try {
                 file.stream = fs.createWriteStream(path, { flags: "a", autoClose: true });
@@ -93,10 +93,6 @@ function getStreamsOfTypeAndTags(tags, type) {
     const out = [];
     for (let i = 0; i < streams.length; i++) {
         const stream = streams[i];
-
-        if (!Array.isArray(stream.tags)) {
-            stream.tags = [ stream.tags ];
-        }
 
         for (let j = 0; j < stream.tags.length; j++) {
             for (let k = 0; k < tags.length; k++) {

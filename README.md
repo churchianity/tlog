@@ -1,6 +1,6 @@
 
 # Background
-tlog is an attempt to write a 'logging library' that has all of the practical benefits of a much larger logging library, but with no dependencies, and in much fewer lines of code, without sacrificing features, by taking a straight-forward approach of solving the problem at hand, and no other problems. There is nothing in this 'library' that could be called a 'system' or 'framework'. Just a few functions that actually do the work required. 
+tlog is an attempt to write a 'logging library' that has all of the practical benefits of a much larger logging library, but with no dependencies, and in much fewer lines of code, without sacrificing features, by taking a straight-forward approach of solving the problem at hand, and no other problems. There is nothing in this 'library' that could be called a 'system' or 'framework'. Just a few functions that actually do the work required.
 
 # Usage
 
@@ -37,7 +37,7 @@ in each case, the array should be an array of objects with a `tags` property (wh
 
 # Details
 ## 'file' object details
-- path: optional string path to the file to create. defaults to the `data` directory, as a `.log` file named a ISO 8601 timestamp at time of creation.
+- path: optional string path to the file to create. defaults to the root directory, as a `.log` file named a ISO 8601 timestamp at time of creation.
 
 ## 'console' object details
 - stdstream: required value of 'stdout', 'stderr', or 'stdin'. It's not usually desired to make it 'stdin'. outputs sent to stdstreams are automatically de-duplicated. even if there are multiple console outputs with the tag relevant to your logs that share the same stdstream, the output will only happen once.

@@ -30,7 +30,8 @@ module.exports = {
     "http": [
         {
             "tags": "none",
-            "url": process.env.MY_SERVER_URL,
+            "url": "http://localhost:8080",
+            //"url": process.env.MY_SERVER_URL,
             "errorTags": "httpErrors",
             "method": "POST",
             "headers": {
