@@ -15,6 +15,14 @@ function formatOutput(...args) {
 }
 
 function parseStreams(config) {
+    function arrayifyTags(target) {
+        if (!target.tags) {
+
+        } else if (!Array.isArray(target.tags)) {
+            target.tags = [ target.tags ];
+        }
+    }
+
     if (config.file) {
         for (let i = 0; i < config.file.length; i++) {
             const file = config.file[i];
@@ -29,6 +37,8 @@ function parseStreams(config) {
                 console.error(`failed to open file at: ${path} for writing. Check the path in the config, and permissions for that directory and this process`);
                 process.exit(1);
             }
+
+            arrayifyTags(file);
         }
     }
 
@@ -47,6 +57,8 @@ function parseStreams(config) {
 
             tty.id = tty.stdstream;
             tty.stream = process[tty.stdstream];
+
+            arrayifyTags(tty);
         }
     }
 
@@ -80,6 +92,8 @@ function parseStreams(config) {
             } else if (!Array.isArray(h.errorTags)) {
                 h.errorTags = [ h.errorTags ];
             }
+
+            arrayifyTags(h);
         }
     }
 
@@ -87,17 +101,18 @@ function parseStreams(config) {
 }
 
 const config = parseStreams(require("./tlog.conf.js"));
+console.log(config);
 
-function getStreamsOfTypeAndTags(tags, type) {
-    const streams = config[type];
+function getTargetsOfTypeAndTags(tags, type) {
+    const targets = config[type];
     const out = [];
-    for (let i = 0; i < streams.length; i++) {
-        const stream = streams[i];
+    for (let i = 0; i < targets.length; i++) {
+        const target = targets[i];
 
-        for (let j = 0; j < stream.tags.length; j++) {
+        for (let j = 0; j < target.tags.length; j++) {
             for (let k = 0; k < tags.length; k++) {
-                if (stream.tags[j] === tags[k]) {
-                    out.push({ type, ...stream });
+                if (target.tags[j] === tags[k]) {
+                    out.push({ type, ...target });
                 }
             }
         }
@@ -105,16 +120,16 @@ function getStreamsOfTypeAndTags(tags, type) {
     return out;
 }
 
-function getStreamsByTags(tags) {
+function getTargetsByTags(tags) {
     return [].concat(
-        getStreamsOfTypeAndTags(tags, "file"),
-        getStreamsOfTypeAndTags(tags, "console"),
-        getStreamsOfTypeAndTags(tags, "http")
+        getTargetsOfTypeAndTags(tags, "file"),
+        getTargetsOfTypeAndTags(tags, "console"),
+        getTargetsOfTypeAndTags(tags, "http")
     );
 }
 
 // convienent list of streams that we always want to send our logs to, regardless of tags
-const alwaysStreams = getStreamsByTags(["all"]);
+const alwaysTargets = getTargetsByTags(["all"]);
 
 function httpRequest(options, ...args) {
     const url = new URL(options.url);
@@ -128,20 +143,20 @@ function httpRequest(options, ...args) {
     });
 
     request.on("error", error => {
-        const streams = getStreamsByTags(options.errorTags);
+        const targets = getTargetsByTags(options.errorTags);
 
-        const usedStreams = {};
-        for (let i = 0; i < streams.length; i++) {
-            const stream = streams[i];
+        const usedTargets = {};
+        for (let i = 0; i < targets.length; i++) {
+            const target = targets[i];
 
-            if (usedStreams[stream.id]) {
+            if (usedTargets[target.id]) {
                 continue;
             }
 
-            usedStreams[stream.id] = true;
+            usedTargets[target.id] = true;
 
-            if (stream.id !== options.id) {
-                write(stream, "error writing to http: ", ...args);
+            if (target.id !== options.id) {
+                write(target, "error writing to http: ", ...args);
             }
         }
     });
@@ -150,19 +165,19 @@ function httpRequest(options, ...args) {
     request.end();
 }
 
-function write(s, ...args) {
-    if (s.stream) {
-        s.stream.write(formatOutput(...args));
+function write(target, ...args) {
+    if (target.stream) {
+        target.stream.write(formatOutput(...args));
 
-    } else if (s.type === "http") {
-        httpRequest(s, ...args);
+    } else if (target.type === "http") {
+        httpRequest(target, ...args);
     }
 }
 
 // log by itself will only log to streams tagged 'all'. if you want to specifiy tags, call 'logt' instead
 function log(...args) {
-    for (let i = 0; i < alwaysStreams.length; i++) {
-        write(alwaysStreams[i], ...args);
+    for (let i = 0; i < alwaysTargets.length; i++) {
+        write(alwaysTargets[i], ...args);
     }
 }
 
@@ -177,29 +192,29 @@ function logt(tags, ...args) {
         tags = [ tags ];
     }
 
-    const usedStreams = {};
-    const streams = getStreamsByTags(tags);
-    for (let i = 0; i < streams.length; i++) {
-        const s = streams[i];
+    const usedTargets = {};
+    const targets = getTargetsByTags(tags);
+    for (let i = 0; i < targets.length; i++) {
+        const target = targets[i];
 
-        if (usedStreams[s.id]) {
+        if (usedTargets[target.id]) {
             continue;
         }
 
-        write(s, ...args);
-        usedStreams[s.id] = true;
+        write(target, ...args);
+        usedTargets[target.id] = true;
     }
 
     // now send it to the 'all' streams. we need to check if we've already done the job, because in the case a stream is tagged with both 'all' and another tag, we'd double send if we didn't de-dupe.
-    for (let i = 0; i < alwaysStreams.length; i++) {
-        const s = alwaysStreams[i];
+    for (let i = 0; i < alwaysTargets.length; i++) {
+        const target = alwaysTargets[i];
 
-        if (usedStreams[s.id]) {
+        if (usedTargets[target.id]) {
             continue;
         }
 
-        write(s, ...args);
-        usedStreams[s.id] = true;
+        write(target, ...args);
+        usedStreams[target.id] = true;
     }
 }
 
