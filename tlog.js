@@ -214,9 +214,22 @@ function logt(tags, ...args) {
         }
 
         write(target, ...args);
-        usedStreams[target.id] = true;
+        usedTargets[target.id] = true;
     }
 }
+
+// you may find it useful to uncomment/modify some of the following lines:
+//console.log = log;
+//console.info = log;
+//console.debug = log;
+//console.warn = (...args) => logt("warn", ...args);
+//console.error = (...args) => logt("error", ...args);
+//
+//console.log = () => { throw new Error("use of console.log is not permitted, use `log` or `logt` instead"); };
+//console.info = () => { throw new Error("use of console.info is not permitted, use `log` or `logt` instead"); };
+//console.debug = () => { throw new Error("use of console.debug is not permitted, use `log` or `logt` instead"); };
+//console.warn = () => { throw new Error("use of console.warn is not permitted, use `log` or `logt` instead"); };
+//console.error = () => { throw new Error("use of console.error is not permitted, use `log` or `logt` instead"); };
 
 module.exports = { log, logt };
 
