@@ -43,11 +43,11 @@ in each case, the array should be an array of objects with a `tags` property (wh
 - stdstream: required value of 'stdout', 'stderr', or 'stdin'. It's not usually desired to make it 'stdin'. outputs sent to stdstreams are automatically de-duplicated. even if there are multiple console outputs with the tag relevant to your logs that share the same stdstream, the output will only happen once.
 
 ## 'http' object details
+Add a 'url' field to the object to specify the url for the request, which should include both the port and protocol - you usually won't need to set 'hostname' or 'host', or 'path' or 'port' or 'protocol'. Certain combinations of port/protocol/path/host/hostname can behave strangely - it's recommended to specify as much information as possible in the 'url' field.
+
 our http object is an extension of the [nodejs http/https options object](https://nodejs.org/api/http.html#httprequesturl-options-callback). The object is passed faithfully to http(s).request, so anything you add that is valid for http(s).request will be valid here.
 
 Whichever method you choose, the data of the log will be sent in the request body.
-
-Add a 'url' field to the object to specify the url for the request, which should include both the port and protocol - you usually won't need to set 'hostname' or 'host', or 'path' or 'port' or 'protocol'. Certain combinations of port/protocol/path/host/hostname can behave strangely - it's recommended to specify as much information as possible in the 'url' field.
 
 You may commonly have to set the 'headers' object, and the 'content-type' header inside of that object, depending on your server. If it's not provided it's set to 'text/plain'.
 
